@@ -55,9 +55,9 @@ class NonchalantHttpxRequest(HTTPXRequest):
                 pool_timeout=pool_timeout,
             )
         except RetryAfter as e:
-            pytest.xfail(f"Not waiting for flood control: {e}")
+            raise
         except TimedOut as e:
-            pytest.xfail(f"Ignoring TimedOut error: {e}")
+            raise
 
 
 class OfflineRequest(BaseRequest):
@@ -109,7 +109,7 @@ async def expect_bad_request(func, message, reason):
         return await func()
     except BadRequest as e:
         if message in str(e):
-            pytest.xfail(f"{reason}. {e}")
+            raise
         else:
             raise e
 

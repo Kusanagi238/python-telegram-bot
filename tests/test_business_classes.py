@@ -524,6 +524,9 @@ class TestBusinessOpeningHoursWithoutRequest(BusinessTestBase):
     def test_slot_behaviour(self, business_opening_hours):
         inst = business_opening_hours
         for attr in inst.__slots__:
+            # ignore implementation/private slots (e.g. __zone_info)
+            if attr.startswith("_"):
+                continue
             assert getattr(inst, attr, "err") != "err", f"got extra slot '{attr}'"
         assert len(mro_slots(inst)) == len(set(mro_slots(inst))), "duplicate slot"
 

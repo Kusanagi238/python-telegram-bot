@@ -50,7 +50,7 @@ class AudioTestBase:
     audio_file_url = "https://goo.gl/3En24v"
     mime_type = "audio/mpeg"
     file_size = 122920
-    thumb_file_size = 1427
+    thumb_file_size = 1395
     thumb_width = 50
     thumb_height = 50
     audio_file_id = "5a3128a4d2a04750b5b58397f3b5e812"

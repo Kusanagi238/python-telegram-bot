@@ -311,7 +311,7 @@ class TestStickerWithoutRequest(StickerTestBase):
 class TestStickerWithRequest(StickerTestBase):
     async def test_send_all_args(self, bot, chat_id, sticker_file, sticker):
         message = await bot.send_sticker(
-            chat_id, sticker=sticker_file, disable_notification=False, protect_content=True
+            chat_id, sticker=sticker, disable_notification=False, protect_content=True
         )
 
         assert isinstance(message.sticker, Sticker)

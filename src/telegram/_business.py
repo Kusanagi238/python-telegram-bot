@@ -561,7 +561,7 @@ class BusinessOpeningHours(TelegramObject):
             time intervals describing business opening hours.
     """
 
-    __slots__ = ("__zone_info", "opening_hours", "time_zone_name")
+    __slots__ = ("_zone_info", "opening_hours", "time_zone_name")
 
     def __init__(
         self,
@@ -576,17 +576,23 @@ class BusinessOpeningHours(TelegramObject):
             opening_hours
         )
 
-        self.__zone_info: Optional[ZoneInfo] = None
+        # backing slot for cached zone info
+        self._zone_info: Optional[ZoneInfo] = None
 
         self._id_attrs = (self.time_zone_name, self.opening_hours)
 
         self._freeze()
 
     @property
-    def _zone_info(self) -> ZoneInfo:
-        if self.__zone_info is None:
-            self.__zone_info = get_zone_info(self.time_zone_name)
-        return self.__zone_info
+    def zone_info(self) -> ZoneInfo:
+        """Return cached ZoneInfo for this object's time_zone_name.
+
+        This property lazily initializes and caches the ZoneInfo in the
+        instance slot ``_zone_info``.
+        """
+        if self._zone_info is None:
+            self._zone_info = get_zone_info(self.time_zone_name)
+        return self._zone_info
 
     def get_opening_hours_for_day(
         self, date: dtm.date, time_zone: Union[dtm.tzinfo, str, None] = None
@@ -612,7 +618,7 @@ class BusinessOpeningHours(TelegramObject):
         if isinstance(time_zone, str):
             tz_target: dtm.tzinfo = get_zone_info(time_zone)
         elif time_zone is None:
-            tz_target = self._zone_info
+            tz_target = self.zone_info
         else:
             tz_target = time_zone
 
@@ -629,7 +635,7 @@ class BusinessOpeningHours(TelegramObject):
                 day=date.day,
                 hour=int_open[1],
                 minute=int_open[2],
-                tzinfo=self._zone_info,
+                tzinfo=self.zone_info,
             ).astimezone(tz_target)
 
             result_int_close = dtm.datetime(
@@ -638,7 +644,7 @@ class BusinessOpeningHours(TelegramObject):
                 day=date.day,
                 hour=int_close[1],
                 minute=int_close[2],
-                tzinfo=self._zone_info,
+                tzinfo=self.zone_info,
             ).astimezone(tz_target)
 
             res.append((result_int_open, result_int_close))
@@ -661,8 +667,8 @@ class BusinessOpeningHours(TelegramObject):
         """
 
         datetime_in_native_tz = (
-            datetime.replace(tzinfo=self._zone_info) if datetime.tzinfo is None else datetime
-        ).astimezone(self._zone_info)
+            datetime.replace(tzinfo=self.zone_info) if datetime.tzinfo is None else datetime
+        ).astimezone(self.zone_info)
         minute_of_week = (
             datetime_in_native_tz.weekday() * 1440
             + datetime_in_native_tz.hour * 60
