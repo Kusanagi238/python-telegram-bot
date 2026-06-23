@@ -1,16 +1,5 @@
 name: Bot API Tests
-on:
-  pull_request:
-    paths:
-      - src/telegram/**
-      - tests/**
-  push:
-    branches:
-      - master
-  schedule:
-    # Run monday and friday morning at 03:07 - odd time to spread load on GitHub Actions
-    - cron: '7 3 * * 1,5'
-
+on: push
 permissions: {}
 
 jobs:
@@ -21,30 +10,30 @@ jobs:
       matrix:
         python-version: [3.11]
         os: [ubuntu-latest]
-      fail-fast: False
+      fail-fast: false
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: false
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -W ignore -m pip install --upgrade pip
-          python -W ignore -m pip install .[all] --group tests
-      - name: Compare to official api
-        run: |
-          pytest -v tests/test_official/test_official.py --junit-xml=.test_report_official.xml
-          exit $?
-        env:
-          TEST_OFFICIAL: "true"
-        shell: bash --noprofile --norc {0}
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8   # v5.0.0
+      with:
+        persist-credentials: false
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065   # v5.6.0
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -W ignore -m pip install --upgrade pip
+        python -W ignore -m pip install .[all] --group tests
+    - name: Compare to official api
+      run: |
+        pytest -v tests/test_official/test_official.py --junit-xml=.test_report_official.xml
+        exit $?
+      env:
+        TEST_OFFICIAL: 'true'
+      shell: bash --noprofile --norc {0}
 
-      - name: Test Summary
-        id: test_summary
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
-        if: always()  # always run, even if tests fail
-        with:
-          paths: .test_report_official.xml
+    - name: Test Summary
+      id: test_summary
+      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86   # v2.4
+      if: always()    # always run, even if tests fail
+      with:
+        paths: .test_report_official.xml
