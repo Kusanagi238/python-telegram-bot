@@ -218,7 +218,13 @@ class MaybeInaccessibleMessage(TelegramObject):
         if data["date"] == 0:
             data["date"] = ZERO_DATE
         else:
-            data["date"] = from_timestamp(data.get("date"), tzinfo=loc_tzinfo)
+            # If no timezone info could be extracted, avoid passing None as tzinfo
+            # to from_timestamp to prevent None tzinfo from propagating and
+            # later causing AttributeError when astimezone() is called.
+            if loc_tzinfo is None:
+                data["date"] = from_timestamp(data.get("date"))
+            else:
+                data["date"] = from_timestamp(data.get("date"), tzinfo=loc_tzinfo)
 
         data["chat"] = de_json_optional(data.get("chat"), Chat, bot)
         return super()._de_json(data=data, bot=bot, api_kwargs=api_kwargs)
@@ -1825,7 +1831,7 @@ class Message(MaybeInaccessibleMessage):
         end_position = position + length
 
         entities = []
-        for entity in self.entities or self.caption_entities:
+        for entity in self.entities or self.caption_entities or []:
             if position <= entity.offset + entity.length and entity.offset <= end_position:
                 # shift the offset by the position of the quote
                 offset = max(0, entity.offset - position)

@@ -257,8 +257,9 @@ class TestForumMethodsWithRequest:
             await bot.reopen_general_forum_topic(chat_id=forum_group_id)
         except BadRequest as exc:
             # If the topic is already open, we get BadRequest: Topic_not_modified
-            if "Topic_not_modified" not in exc.message:
-                raise exc
+            # Some BadRequest implementations may not expose a .message attribute; use str(exc)
+            if "Topic_not_modified" not in str(exc):
+                raise
 
         # first just close, bot don't hide
         result = await bot.close_general_forum_topic(

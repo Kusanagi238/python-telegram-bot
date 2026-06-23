@@ -3184,14 +3184,18 @@ class Bot(TelegramObject, contextlib.AbstractAsyncContextManager["Bot"]):
         """
         # The location parameter is a convenience functionality added by us, so enforcing the
         # mutual exclusivity here is nothing that Telegram would handle anyway
-        if not (all([latitude, longitude]) or location):
-            raise ValueError(
-                "Either location or latitude and longitude must be passed as argument."
-            )
-        if not (latitude is not None or longitude is not None) ^ bool(location):
-            raise ValueError(
-                "Either location or latitude and longitude must be passed as argument. Not both."
-            )
+        # Require either both latitude and longitude (explicit None checks) OR a Location instance
+        if location is None:
+            if latitude is None or longitude is None:
+                raise ValueError(
+                    "Either location or latitude and longitude must be passed as argument."
+                )
+        else:
+            # location provided: latitude/longitude must NOT be provided
+            if latitude is not None or longitude is not None:
+                raise ValueError(
+                    "Either location or latitude and longitude must be passed as argument. Not both."
+                )
 
         if isinstance(location, Location):
             latitude = location.latitude
@@ -3390,16 +3394,25 @@ class Bot(TelegramObject, contextlib.AbstractAsyncContextManager["Bot"]):
         """
         # The venue parameter is a convenience functionality added by us, so enforcing the
         # mutual exclusivity here is nothing that Telegram would handle anyway
-        if not (venue or all([latitude, longitude, address, title])):
-            raise ValueError(
-                "Either venue or latitude, longitude, address and title must be "
-                "passed as arguments."
-            )
-        if not bool(venue) ^ any([latitude, longitude, address, title]):
-            raise ValueError(
-                "Either venue or latitude, longitude, address and title must be "
-                "passed as arguments. Not both."
-            )
+        # Require either a Venue instance OR explicit latitude, longitude, address and title
+        if venue is None:
+            if latitude is None or longitude is None or address is None or title is None:
+                raise ValueError(
+                    "Either venue or latitude, longitude, address and title must be "
+                    "passed as arguments."
+                )
+        else:
+            # venue provided: do not allow explicit venue fields
+            if (
+                latitude is not None
+                or longitude is not None
+                or address is not None
+                or title is not None
+            ):
+                raise ValueError(
+                    "Either venue or latitude, longitude, address and title must be "
+                    "passed as arguments. Not both."
+                )
 
         if isinstance(venue, Venue):
             latitude = venue.location.latitude
@@ -9918,7 +9931,8 @@ CUSTOM_EMOJI_IDENTIFIER_LIMIT` custom emoji identifiers can be specified.
                 connect_timeout=connect_timeout,
                 pool_timeout=pool_timeout,
                 api_kwargs=api_kwargs,
-            )
+            ),
+            bot=self,
         )
 
     async def get_business_account_star_balance(
@@ -10145,7 +10159,8 @@ MAX_UNIQUE_GIFT_AREAS` of :class:`telegram.StoryAreaTypeUniqueGift`.
                 connect_timeout=connect_timeout,
                 pool_timeout=pool_timeout,
                 api_kwargs=api_kwargs,
-            )
+            ),
+            bot=self,
         )
 
     async def edit_story(
@@ -10223,7 +10238,8 @@ MAX_UNIQUE_GIFT_AREAS` of :class:`telegram.StoryAreaTypeUniqueGift`.
                 connect_timeout=connect_timeout,
                 pool_timeout=pool_timeout,
                 api_kwargs=api_kwargs,
-            )
+            ),
+            bot=self,
         )
 
     async def delete_story(
@@ -11196,7 +11212,8 @@ CHAT_ACTIVITY_TIMEOUT` seconds.
                 connect_timeout=connect_timeout,
                 pool_timeout=pool_timeout,
                 api_kwargs=api_kwargs,
-            )
+            ),
+            bot=self,
         )
 
     async def send_gift(

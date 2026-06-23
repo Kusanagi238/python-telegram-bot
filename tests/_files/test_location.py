@@ -37,7 +37,7 @@ def location():
         longitude=LocationTestBase.longitude,
         horizontal_accuracy=LocationTestBase.horizontal_accuracy,
         live_period=LocationTestBase.live_period,
-        heading=LocationTestBase.live_period,
+        heading=LocationTestBase.heading,
         proximity_alert_radius=LocationTestBase.proximity_alert_radius,
     )
 
@@ -84,8 +84,8 @@ class TestLocationWithoutRequest(LocationTestBase):
         assert location_dict["horizontal_accuracy"] == location.horizontal_accuracy
         assert location_dict["live_period"] == int(self.live_period.total_seconds())
         assert isinstance(location_dict["live_period"], int)
-        assert location["heading"] == location.heading
-        assert location["proximity_alert_radius"] == location.proximity_alert_radius
+        assert location_dict["heading"] == location.heading
+        assert location_dict["proximity_alert_radius"] == location.proximity_alert_radius
 
     def test_time_period_properties(self, PTB_TIMEDELTA, location):
         if PTB_TIMEDELTA:

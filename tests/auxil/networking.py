@@ -54,10 +54,12 @@ class NonchalantHttpxRequest(HTTPXRequest):
                 connect_timeout=connect_timeout,
                 pool_timeout=pool_timeout,
             )
-        except RetryAfter as e:
-            pytest.xfail(f"Not waiting for flood control: {e}")
-        except TimedOut as e:
-            pytest.xfail(f"Ignoring TimedOut error: {e}")
+        except RetryAfter:
+            # Re-raise to allow tests/CI to observe and handle the retry-after condition
+            raise
+        except TimedOut:
+            # Re-raise so the timeout is not silently converted to an XFAIL
+            raise
 
 
 class OfflineRequest(BaseRequest):
@@ -94,24 +96,28 @@ class OfflineRequest(BaseRequest):
 async def expect_bad_request(func, message, reason):
     """
     Wrapper for testing bot functions expected to result in an :class:`telegram.error.BadRequest`.
-    Makes it XFAIL, if the specified error message is present.
+    If the specified error message is present, the exception is treated as the expected outcome
+    and returned to the caller instead of being converted to an XFAIL.
 
     Args:
         func: The awaitable to be executed.
         message: The expected message of the bad request error. If another message is present,
             the error will be reraised.
-        reason: Explanation for the XFAIL.
+        reason: Explanation for the expectation.
 
     Returns:
-        On success, returns the return value of :attr:`func`
+        On success, returns the return value of :attr:`func`. If a BadRequest with the expected
+        message occurs, the caught exception is returned so the test can assert on it.
     """
     try:
         return await func()
     except BadRequest as e:
         if message in str(e):
-            pytest.xfail(f"{reason}. {e}")
+            # Return the exception instead of marking the test XFAIL so the test harness
+            # can treat this as the expected outcome.
+            return e
         else:
-            raise e
+            raise
 
 
 async def send_webhook_message(
@@ -131,16 +137,19 @@ async def send_webhook_message(
     if secret_token:
         headers["X-Telegram-Bot-Api-Secret-Token"] = secret_token
 
-    if not payload_str:
-        content_len = None
+    # Distinguish between "no payload provided" (None) and an empty payload string ("").
+    if payload_str is None:
         payload = None
     else:
         payload = bytes(payload_str, encoding=TextEncoding.UTF_8)
 
+    # If content_len is left as -1, compute it from the payload. For a None payload we
+    # keep payload as None and will omit the Content-Length header; for an empty payload
+    # (b''), content-length will be set to 0.
     if content_len == -1:
-        content_len = len(payload)
+        content_len = len(payload) if payload is not None else 0
 
-    if content_len is not None:
+    if payload is not None:
         headers["content-length"] = str(content_len)
 
     url = f"http://{ip}:{port}/{url_path}"
